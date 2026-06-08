@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Scan PCBA</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5; }
+        .header { background: white; padding: 20px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .logo { max-width: 200px; margin-bottom: 10px; }
+        input { padding: 10px; font-size: 20px; width: 300px; border: 2px solid #4CAF50; border-radius: 4px; }
+        #status { margin-top: 20px; font-size: 16px; color: #333; }
+        .counter { background: white; padding: 15px; margin: 20px auto; max-width: 400px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; }
+        .counter-value { font-size: 32px; font-weight: bold; color: #4CAF50; }
+        .supplier-info { font-size: 18px; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="image/logo.png" alt="Logo" class="logo">
+        <h1>Imprtession carte PCBA HEXING</h1>
+    </div>
+    <h2>Scanner le code du PCBA</h2>
+    <!-- L'attribut autofocus est crucial pour la douchette -->
+    <input type="text" id="scanInput" autofocus placeholder="En attente du scan...">
+    <div class="counter">
+        <div>Compteur journalier</div>
+        <div class="counter-value" id="counterDisplay">0000</div>
+        <div class="supplier-info" id="supplierDisplay">En attente...</div>
+    </div>
+    <div id="status"></div>
+
+    <script>
+        const input = document.getElementById('scanInput');
+        const status = document.getElementById('status');
+
+        // Charger le compteur au démarrage de la page
+        function loadCounter() {
+            fetch('get_counter.php')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('counterDisplay').innerText = data.counter;
+                document.getElementById('supplierDisplay').innerText = 
+                    data.supplierCode + " - " + data.supplier;
+            })
+            .catch(error => {
+                console.error('Erreur chargement compteur:', error);
+            });
+        }
+
+        // Charger le compteur au chargement de la page
+        window.addEventListener('load', loadCounter);
+
+        input.addEventListener('keypress', function(e) {
+            // La douchette simule la touche Entrée (Code 13)
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                let code = input.value;
+                
+                if(code.trim() !== "") {
+                    imprimerCode(code);
+                }
+                
+                // Vider le champ pour le scan suivant
+                input.value = '';
+            }
+        });
+
+        function imprimerCode(code) {
+            status.innerText = "Impression en cours...";
+            
+            // Envoi des données au backend PHP
+            let formData = new FormData();
+            formData.append('code_pcba', code);
+
+            fetch('print.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('counterDisplay').innerText = data.counter;
+                    document.getElementById('supplierDisplay').innerText = 
+                        data.supplierCode + " - " + data.supplier;
+                    status.innerText = "✓ Dernier scan : " + code + " (Imprimé)";
+                    status.style.color = "green";
+                } else {
+                    status.innerText = "✗ Erreur : " + data.error;
+                    status.style.color = "red";
+                }
+            })
+            .catch(error => {
+                status.innerText = "Erreur d'impression";
+                console.error(error);
+            });
+        }
+    </script>
+</body>
+</html>
