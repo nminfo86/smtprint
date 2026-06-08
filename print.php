@@ -1,5 +1,8 @@
 <?php
-// Fonction pour obtenir le compteur journalier
+// INDISPENSABLE : Indiquer que ce fichier répond toujours en JSON
+header('Content-Type: application/json');
+
+// Fonction pour obtenir le compteur journalier (et l'incrémenter)
 function getDailyCounter() {
     $counterFile = 'counter.txt';
     $today = date('Y-m-d');
@@ -12,47 +15,62 @@ function getDailyCounter() {
         // Si c'est un nouveau jour, réinitialiser le compteur
         if ($date !== $today) {
             $count = 1;
-            file_put_contents($counterFile, $today . '|' . $count);
         } else {
             // Incrémenter le compteur
             $count = intval($count) + 1;
-            file_put_contents($counterFile, $today . '|' . $count);
         }
     } else {
-        // Créer le fichier de compteur
+        // Créer le fichier de compteur pour la première fois
         $count = 1;
-        file_put_contents($counterFile, $today . '|' . $count);
     }
+    
+    // Sauvegarder la nouvelle valeur
+    file_put_contents($counterFile, $today . '|' . $count);
     
     return str_pad($count, 4, '0', STR_PAD_LEFT);
 }
 
-// Fonction pour obtenir le code et nom du fournisseur
+// Fonction pour obtenir le code et nom du fournisseur et les positions
 function getSupplierInfo() {
     $configFile = 'config.json';
     if (file_exists($configFile)) {
         $config = json_decode(file_get_contents($configFile), true);
         if (isset($config['supplier']) && is_array($config['supplier'])) {
-            // Récupérer le premier (et unique) fournisseur
             $supplierCode = key($config['supplier']);
             $supplierName = $config['supplier'][$supplierCode];
-            return ['code' => $supplierCode, 'name' => $supplierName];
+            $positions = isset($config['positions']) ? $config['positions'] : [
+                'datamatrix' => ['x' => 5, 'y' => 10],
+                'supplierCode' => ['x' => 10, 'y' => 50],
+                'date' => ['x' => 5, 'y' => 70]
+            ];
+            return [
+                'code' => $supplierCode, 
+                'name' => $supplierName,
+                'positions' => $positions
+            ];
         }
     }
-    return ['code' => '00', 'name' => 'Unknown'];
+    return [
+        'code' => '00', 
+        'name' => 'Unknown',
+        'positions' => [
+            'datamatrix' => ['x' => 5, 'y' => 10],
+            'supplierCode' => ['x' => 10, 'y' => 50],
+            'date' => ['x' => 5, 'y' => 70]
+        ]
+    ];
 }
 
+// DÉBUT DU TRAITEMENT PRINCIPAL
 if (isset($_POST['code_pcba']) && trim($_POST['code_pcba']) !== '') {
     $codeScanne = trim($_POST['code_pcba']);
     
-    // Obtenir le code et nom du fournisseur depuis le fichier JSON
+    // Obtenir le code et nom du fournisseur et les positions
     $supplierInfo = getSupplierInfo();
     $supplierCode = $supplierInfo['code'];
     $supplierName = $supplierInfo['name'];
+    $positions = $supplierInfo['positions'];
     
-    // Obtenir le compteur journalier
-    $dailyCounter = getDailyCounter();
-
     // Construction du flux de commandes EZPL
     $ezpl = "^XSETCUT,DOUBLECUT,0\r\n";
     $ezpl .= "^Q15,3\r\n";
@@ -71,31 +89,50 @@ if (isset($_POST['code_pcba']) && trim($_POST['code_pcba']) !== '') {
     $ezpl .= "^L\r\n";
     $ezpl .= "Dy2-me-dd\r\n";
     $ezpl .= "Th:m:s\r\n";
-    $ezpl .= "XRB0,30,4,5,15\r\n";     // DataMatrix: position (0,15), type 4, taille module 3, 15 caractères
-    $ezpl .= $codeScanne . "\r\n";    // Injection directe de la valeur scannée
-    // Ajouter le code du fournisseur sous le datamatrix (plus petit et plus bas)
-    $ezpl .= "AC,5,55,0,0,0,0," . $supplierCode . "\r\n";  // Code fournisseur (ex: 85)
-    $ezpl .= "E\r\n";                 // Ordre final d'impression
+    
+    // Position et configuration du DataMatrix
+    $ezpl .= "XRB" . $positions['datamatrix']['x'] . "," . $positions['datamatrix']['y'] . ",3,0,15\r\n";  
+    $ezpl .= $codeScanne . "\r\n"; 
+    
+    // Ajouter le code du fournisseur
+    $ezpl .= "AA," . $positions['supplierCode']['x'] . "," . $positions['supplierCode']['y'] . ",0,0,0,0," . $supplierCode . "\r\n";
+    
+    // Ajouter la date DD/MM/YY
+    $ezpl .= "AA," . $positions['date']['x'] . "," . $positions['date']['y'] . ",0,0,0,0," . date('d/m/y') . "\r\n";
+    
+    $ezpl .= "E\r\n";
 
-    // Chemin réseau vers l'imprimante partagée sous Windows
-    // Assurez-vous que le nom correspond exactement à celui donné dans le panneau de configuration
+    // Chemin réseau
     $printerPath = "\\\\localhost\\smtprinter"; 
 
     // Envoi direct du flux brut à l'imprimante
     if (file_put_contents($printerPath, $ezpl)) {
-        // Retourner les informations en JSON pour l'affichage dans l'UI
+        
+        // SUCCÈS : On incrémente le compteur SEULEMENT si l'impression a marché
+        $dailyCounter = getDailyCounter();
+
+        // Retourner les informations en JSON pour l'UI
         echo json_encode([
             'success' => true,
             'supplier' => $supplierName,
             'supplierCode' => $supplierCode,
             'counter' => $dailyCounter
         ]);
+        
     } else {
+        // ERREUR D'IMPRESSION
         http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Impossible de communiquer avec l\'imprimante Godex.']);
+        echo json_encode([
+            'success' => false, 
+            'error' => 'Impossible de communiquer avec l\'imprimante Godex.'
+        ]);
     }
 } else {
+    // ERREUR DE DONNÉES : Renvoyer du JSON, pas du texte brut
     http_response_code(400);
-    echo "Erreur : Aucun code PCBA reçu.";
+    echo json_encode([
+        'success' => false, 
+        'error' => 'Aucun code PCBA reçu.'
+    ]);
 }
 ?>

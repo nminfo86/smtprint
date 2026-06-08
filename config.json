@@ -1,5 +1,19 @@
 {
     "supplier": {
-        "85": "Hexing"
+        "80": "SMT CO"
+    },
+    "positions": {
+        "datamatrix": {
+            "x": 20,
+            "y": 10
+        },
+        "supplierCode": {
+            "x": 30,
+            "y": 55
+        },
+        "date": {
+            "x": 10,
+            "y": 80
+        }
     }
 }
