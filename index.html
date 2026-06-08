@@ -2,22 +2,13 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Scan PCBA</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f5f5f5; }
-        .header { background: white; padding: 20px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .logo { max-width: 200px; margin-bottom: 10px; }
-        input { padding: 10px; font-size: 20px; width: 300px; border: 2px solid #4CAF50; border-radius: 4px; }
-        #status { margin-top: 20px; font-size: 16px; color: #333; }
-        .counter { background: white; padding: 15px; margin: 20px auto; max-width: 400px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; }
-        .counter-value { font-size: 32px; font-weight: bold; color: #4CAF50; }
-        .supplier-info { font-size: 18px; color: #666; margin-top: 10px; }
-    </style>
+    <title>Scan PCBA | SAIEG</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="header">
         <img src="image/logo.png" alt="Logo" class="logo">
-        <h1>Imprtession carte PCBA HEXING</h1>
+        <h1>Impression carte PCBA HEXING</h1>
     </div>
     <h2>Scanner le code du PCBA</h2>
     <!-- L'attribut autofocus est crucial pour la douchette -->
@@ -66,7 +57,17 @@
         });
 
         function imprimerCode(code) {
+            // Vérifier que le code contient uniquement des chiffres
+            if (!/^\d+$/.test(code)) {
+                status.innerText = "⚠ ERREUR : Le code doit contenir uniquement des chiffres ! Vérifiez que la langue de saisie est bien en anglais.";
+                status.style.color = "orange";
+                status.style.fontWeight = "bold";
+                return; // Ne pas continuer si le code n'est pas valide
+            }
+            
             status.innerText = "Impression en cours...";
+            status.style.color = "#333";
+            status.style.fontWeight = "normal";
             
             // Envoi des données au backend PHP
             let formData = new FormData();
@@ -91,9 +92,14 @@
             })
             .catch(error => {
                 status.innerText = "Erreur d'impression";
+                status.style.color = "red";
                 console.error(error);
             });
         }
     </script>
+
+    <div class="footer">
+        Created by <a href="https://github.com/nminfo86" target="_blank">Nminfo86</a> © 2026
+    </div>
 </body>
 </html>
