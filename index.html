@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Scan PCBA</title>
+    <title>Scan PCBA | SAIEG</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -57,7 +57,17 @@
         });
 
         function imprimerCode(code) {
+            // Vérifier que le code contient uniquement des chiffres
+            if (!/^\d+$/.test(code)) {
+                status.innerText = "⚠ ERREUR : Le code doit contenir uniquement des chiffres ! Vérifiez que la langue de saisie est bien en anglais.";
+                status.style.color = "orange";
+                status.style.fontWeight = "bold";
+                return; // Ne pas continuer si le code n'est pas valide
+            }
+            
             status.innerText = "Impression en cours...";
+            status.style.color = "#333";
+            status.style.fontWeight = "normal";
             
             // Envoi des données au backend PHP
             let formData = new FormData();
@@ -82,9 +92,14 @@
             })
             .catch(error => {
                 status.innerText = "Erreur d'impression";
+                status.style.color = "red";
                 console.error(error);
             });
         }
     </script>
+
+    <div class="footer">
+        Created by <a href="https://github.com/nminfo86" target="_blank">Nminfo86</a> © 2026
+    </div>
 </body>
 </html>

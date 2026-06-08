@@ -2,6 +2,7 @@
     "supplier": {
         "80": "SMT CO"
     },
+    "printerName": "smtprinter",
     "positions": {
         "datamatrix": {
             "x": 20,

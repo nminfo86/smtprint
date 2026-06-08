@@ -43,10 +43,12 @@ function getSupplierInfo() {
                 'supplierCode' => ['x' => 10, 'y' => 50],
                 'date' => ['x' => 5, 'y' => 70]
             ];
+            $printerName = isset($config['printerName']) ? $config['printerName'] : 'smtprinter';
             return [
                 'code' => $supplierCode, 
                 'name' => $supplierName,
-                'positions' => $positions
+                'positions' => $positions,
+                'printerName' => $printerName
             ];
         }
     }
@@ -57,7 +59,8 @@ function getSupplierInfo() {
             'datamatrix' => ['x' => 5, 'y' => 10],
             'supplierCode' => ['x' => 10, 'y' => 50],
             'date' => ['x' => 5, 'y' => 70]
-        ]
+        ],
+        'printerName' => 'smtprinter'
     ];
 }
 
@@ -65,11 +68,22 @@ function getSupplierInfo() {
 if (isset($_POST['code_pcba']) && trim($_POST['code_pcba']) !== '') {
     $codeScanne = trim($_POST['code_pcba']);
     
+    // Vérifier que le code contient uniquement des chiffres
+    if (!ctype_digit($codeScanne)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false, 
+            'error' => 'Le code doit contenir uniquement des chiffres. Vérifiez la langue de saisie.'
+        ]);
+        exit;
+    }
+    
     // Obtenir le code et nom du fournisseur et les positions
     $supplierInfo = getSupplierInfo();
     $supplierCode = $supplierInfo['code'];
     $supplierName = $supplierInfo['name'];
     $positions = $supplierInfo['positions'];
+    $printerName = $supplierInfo['printerName'];
     
     // Construction du flux de commandes EZPL
     $ezpl = "^XSETCUT,DOUBLECUT,0\r\n";
@@ -103,7 +117,7 @@ if (isset($_POST['code_pcba']) && trim($_POST['code_pcba']) !== '') {
     $ezpl .= "E\r\n";
 
     // Chemin réseau
-    $printerPath = "\\\\localhost\\smtprinter"; 
+    $printerPath = "\\\\localhost\\" . $printerName; 
 
     // Envoi direct du flux brut à l'imprimante
     if (file_put_contents($printerPath, $ezpl)) {
