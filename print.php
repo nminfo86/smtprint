@@ -1,33 +1,42 @@
 <?php
 // INDISPENSABLE : Indiquer que ce fichier répond toujours en JSON
+ini_set('display_errors', 0); // Ne jamais afficher les erreurs PHP en HTML (corrompt le JSON)
+error_reporting(E_ALL);       // Les enregistrer dans les logs serveur uniquement
 header('Content-Type: application/json');
 
-// Fonction pour obtenir le compteur journalier (et l'incrémenter)
-function getDailyCounter() {
+// Incrémente et retourne les 3 compteurs dans un seul fichier
+// Format counter.txt : date|daily|month_key|monthly|year_key|annual
+function getCounters() {
     $counterFile = 'counter.txt';
-    $today = date('Y-m-d');
-    
-    // Lire le fichier de compteur
+    $today     = date('Y-m-d');
+    $thisMonth = date('Y-m');
+    $thisYear  = date('Y');
+
     if (file_exists($counterFile)) {
-        $data = file_get_contents($counterFile);
-        list($date, $count) = explode('|', $data);
-        
-        // Si c'est un nouveau jour, réinitialiser le compteur
-        if ($date !== $today) {
-            $count = 1;
-        } else {
-            // Incrémenter le compteur
-            $count = intval($count) + 1;
-        }
+        $parts     = explode('|', file_get_contents($counterFile));
+        $lastDate  = $parts[0] ?? $today;
+        $daily     = intval($parts[1] ?? 0);
+        $lastMonth = $parts[2] ?? $thisMonth;
+        $monthly   = intval($parts[3] ?? 0);
+        $lastYear  = $parts[4] ?? $thisYear;
+        $annual    = intval($parts[5] ?? 0);
+
+        $daily   = ($lastDate  !== $today)     ? 1 : $daily   + 1;
+        $monthly = ($lastMonth !== $thisMonth) ? 1 : $monthly + 1;
+        $annual  = ($lastYear  !== $thisYear)  ? 1 : $annual  + 1;
     } else {
-        // Créer le fichier de compteur pour la première fois
-        $count = 1;
+        $daily = $monthly = $annual = 1;
     }
-    
-    // Sauvegarder la nouvelle valeur
-    file_put_contents($counterFile, $today . '|' . $count);
-    
-    return str_pad($count, 4, '0', STR_PAD_LEFT);
+
+    file_put_contents($counterFile,
+        $today . '|' . $daily . '|' . $thisMonth . '|' . $monthly . '|' . $thisYear . '|' . $annual
+    );
+
+    return [
+        'counter'        => str_pad($daily,   4, '0', STR_PAD_LEFT),
+        'monthlyCounter' => str_pad($monthly, 5, '0', STR_PAD_LEFT),
+        'annualCounter'  => str_pad($annual,  6, '0', STR_PAD_LEFT),
+    ];
 }
 
 // Fonction pour obtenir le code et nom du fournisseur et les positions
@@ -86,26 +95,26 @@ if (isset($_POST['code_pcba']) && trim($_POST['code_pcba']) !== '') {
     $printerName = $supplierInfo['printerName'];
     
     // Construction du flux de commandes EZPL
-    $ezpl = "^XSETCUT,DOUBLECUT,0\r\n";
-    $ezpl .= "^Q15,3\r\n";
-    $ezpl .= "^W10\r\n";
-    $ezpl .= "^H8\r\n";
-    $ezpl .= "^P1\r\n";
-    $ezpl .= "^S4\r\n";
-    $ezpl .= "^AD\r\n";
-    $ezpl .= "^C1\r\n";
-    $ezpl .= "^R4\r\n";
-    $ezpl .= "~Q+0\r\n";
-    $ezpl .= "^O0\r\n";
-    $ezpl .= "^D0\r\n";
-    $ezpl .= "^E18\r\n";
-    $ezpl .= "~R255\r\n";
-    $ezpl .= "^L\r\n";
-    $ezpl .= "Dy2-me-dd\r\n";
-    $ezpl .= "Th:m:s\r\n";
+    $ezpl = "^XSETCUT,DOUBLECUT,0\r\n"; // Mode de découpe : double coupe activée
+    $ezpl .= "^Q15,3\r\n";              // *** TAILLE ÉTIQUETTE (HAUTEUR) *** : longueur = 15 mm, espace inter-étiquette (gap) = 3 mm
+    $ezpl .= "^W25\r\n";               // *** TAILLE ÉTIQUETTE (LARGEUR) ***  : largeur = 25 mm (→ étiquette 25 × 15 mm)
+    $ezpl .= "^H8\r\n";               // Vitesse de la tête d'impression (head speed) = 8
+    $ezpl .= "^P1\r\n";               // Nombre de copies à imprimer = 1
+    $ezpl .= "^S4\r\n";               // Vitesse d'impression = 4 (ips)
+    $ezpl .= "^AD\r\n";               // Sélection de la police de caractères : police D
+    $ezpl .= "^C1\r\n";               // Mode de découpe : coupe automatique activée (1)
+    $ezpl .= "^R4\r\n";               // Type de ruban (ribbon) = 4
+    $ezpl .= "~Q+0\r\n";              // Décalage de position verticale (offset) = 0
+    $ezpl .= "^O0\r\n";               // Orientation de l'impression = 0 (normal, sans rotation)
+    $ezpl .= "^D0\r\n";               // Densité d'impression (darkness) = 0 (valeur par défaut)
+    $ezpl .= "^E18\r\n";              // Énergie d'impression (print energy) = 18
+    $ezpl .= "~R255\r\n";             // Point de référence (reference point) = 255
+    $ezpl .= "^L\r\n";                // Début du format de l'étiquette (Label start)
+    $ezpl .= "Dy2-me-dd\r\n";         // Format de la date interne : AA-MM-JJ (ex : 26-06-24)
+    $ezpl .= "Th:m:s\r\n";            // Format de l'heure interne : HH:MM:SS
     
     // Position et configuration du DataMatrix
-    $ezpl .= "XRB" . $positions['datamatrix']['x'] . "," . $positions['datamatrix']['y'] . ",3,0,15\r\n";  
+    $ezpl .= "XRB" . $positions['datamatrix']['x'] . "," . $positions['datamatrix']['y'] . ",4,0,15\r\n";  
     $ezpl .= $codeScanne . "\r\n"; 
     
     // Ajouter le code du fournisseur
@@ -120,25 +129,31 @@ if (isset($_POST['code_pcba']) && trim($_POST['code_pcba']) !== '') {
     $printerPath = "\\\\localhost\\" . $printerName; 
 
     // Envoi direct du flux brut à l'imprimante
-    if (file_put_contents($printerPath, $ezpl)) {
+    if (@file_put_contents($printerPath, $ezpl)) { // @ supprime le warning HTML, error_get_last() le capture
         
         // SUCCÈS : On incrémente le compteur SEULEMENT si l'impression a marché
-        $dailyCounter = getDailyCounter();
+        $counters = getCounters();
 
         // Retourner les informations en JSON pour l'UI
         echo json_encode([
             'success' => true,
             'supplier' => $supplierName,
             'supplierCode' => $supplierCode,
-            'counter' => $dailyCounter
+            'counter' => $counters['counter'],
+            'monthlyCounter' => $counters['monthlyCounter'],
+            'annualCounter' => $counters['annualCounter']
         ]);
         
     } else {
         // ERREUR D'IMPRESSION
+        $lastError = error_get_last();
+        $errorDetail = $lastError ? $lastError['message'] : 'Erreur inconnue';
         http_response_code(500);
         echo json_encode([
             'success' => false, 
-            'error' => 'Impossible de communiquer avec l\'imprimante Godex.'
+            'error' => 'Impossible de communiquer avec l\'imprimante Godex.',
+            'detail' => $errorDetail,
+            'printerPath' => $printerPath
         ]);
     }
 } else {

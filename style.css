@@ -31,11 +31,20 @@ input {
     color: #333;
 }
 
+.counters-grid {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 20px auto;
+    max-width: 860px;
+}
+
 .counter {
     background: white;
-    padding: 15px;
-    margin: 20px auto;
-    max-width: 400px;
+    padding: 15px 20px;
+    flex: 1;
+    min-width: 180px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     border-radius: 8px;
 }
@@ -49,7 +58,7 @@ input {
 .supplier-info {
     font-size: 18px;
     color: #666;
-    margin-top: 10px;
+    margin: 0 auto 20px;
 }
 
 .footer {

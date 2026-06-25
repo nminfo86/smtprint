@@ -13,11 +13,21 @@
     <h2>Scanner le code du PCBA</h2>
     <!-- L'attribut autofocus est crucial pour la douchette -->
     <input type="text" id="scanInput" autofocus placeholder="En attente du scan...">
-    <div class="counter">
-        <div>Compteur journalier</div>
-        <div class="counter-value" id="counterDisplay">0000</div>
-        <div class="supplier-info" id="supplierDisplay">En attente...</div>
+    <div class="counters-grid">
+        <div class="counter">
+            <div>Compteur journalier</div>
+            <div class="counter-value" id="counterDisplay">0000</div>
+        </div>
+        <div class="counter">
+            <div>Compteur mensuel</div>
+            <div class="counter-value" id="monthlyDisplay">00000</div>
+        </div>
+        <div class="counter">
+            <div>Compteur annuel</div>
+            <div class="counter-value" id="annualDisplay">000000</div>
+        </div>
     </div>
+    <div class="supplier-info" id="supplierDisplay">En attente...</div>
     <div id="status"></div>
 
     <script>
@@ -30,6 +40,8 @@
             .then(response => response.json())
             .then(data => {
                 document.getElementById('counterDisplay').innerText = data.counter;
+                document.getElementById('monthlyDisplay').innerText = data.monthlyCounter;
+                document.getElementById('annualDisplay').innerText = data.annualCounter;
                 document.getElementById('supplierDisplay').innerText = 
                     data.supplierCode + " - " + data.supplier;
             })
@@ -81,6 +93,8 @@
             .then(data => {
                 if (data.success) {
                     document.getElementById('counterDisplay').innerText = data.counter;
+                    document.getElementById('monthlyDisplay').innerText = data.monthlyCounter;
+                    document.getElementById('annualDisplay').innerText = data.annualCounter;
                     document.getElementById('supplierDisplay').innerText = 
                         data.supplierCode + " - " + data.supplier;
                     status.innerText = "✓ Dernier scan : " + code + " (Imprimé)";
@@ -99,7 +113,7 @@
     </script>
 
     <div class="footer">
-        Created by <a href="https://github.com/nminfo86" target="_blank">Nminfo86</a> © 2026
+        Created by <a href="https://www.linkedin.com/in/nassim-bouhezila/" target="_blank">Nminfo</a> © 2026
     </div>
 </body>
 </html>

@@ -1,22 +1,26 @@
 <?php
-// Récupérer le compteur actuel sans l'incrémenter
-function getCurrentCounter() {
+// Lit les 3 compteurs sans les incrémenter (1 seul fichier)
+// Format counter.txt : date|daily|month_key|monthly|year_key|annual
+function readCounters() {
     $counterFile = 'counter.txt';
-    $today = date('Y-m-d');
-    
+    $today     = date('Y-m-d');
+    $thisMonth = date('Y-m');
+    $thisYear  = date('Y');
+
     if (file_exists($counterFile)) {
-        $data = file_get_contents($counterFile);
-        list($date, $count) = explode('|', $data);
-        
-        // Si c'est un nouveau jour, le compteur est à 0
-        if ($date !== $today) {
-            return '0000';
-        } else {
-            return str_pad($count, 4, '0', STR_PAD_LEFT);
-        }
+        $parts   = explode('|', file_get_contents($counterFile));
+        $daily   = ($parts[0] === $today)     ? intval($parts[1] ?? 0) : 0;
+        $monthly = ($parts[2] === $thisMonth) ? intval($parts[3] ?? 0) : 0;
+        $annual  = ($parts[4] === $thisYear)  ? intval($parts[5] ?? 0) : 0;
+    } else {
+        $daily = $monthly = $annual = 0;
     }
-    
-    return '0000';
+
+    return [
+        'counter'        => str_pad($daily,   4, '0', STR_PAD_LEFT),
+        'monthlyCounter' => str_pad($monthly, 5, '0', STR_PAD_LEFT),
+        'annualCounter'  => str_pad($annual,  6, '0', STR_PAD_LEFT),
+    ];
 }
 
 // Récupérer les infos du fournisseur
@@ -33,13 +37,15 @@ function getSupplierInfo() {
     return ['code' => '00', 'name' => 'Unknown'];
 }
 
-$counter = getCurrentCounter();
+$counters     = readCounters();
 $supplierInfo = getSupplierInfo();
 
 header('Content-Type: application/json');
 echo json_encode([
-    'counter' => $counter,
-    'supplierCode' => $supplierInfo['code'],
-    'supplier' => $supplierInfo['name']
+    'counter'        => $counters['counter'],
+    'monthlyCounter' => $counters['monthlyCounter'],
+    'annualCounter'  => $counters['annualCounter'],
+    'supplierCode'   => $supplierInfo['code'],
+    'supplier'       => $supplierInfo['name']
 ]);
 ?>
