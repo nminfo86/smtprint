@@ -4,41 +4,6 @@ ini_set('display_errors', 0); // Ne jamais afficher les erreurs PHP en HTML (cor
 error_reporting(E_ALL);       // Les enregistrer dans les logs serveur uniquement
 header('Content-Type: application/json');
 
-// Incrémente et retourne les 3 compteurs dans un seul fichier
-// Format counter.txt : date|daily|month_key|monthly|year_key|annual
-function getCounters() {
-    $counterFile = 'counter.txt';
-    $today     = date('Y-m-d');
-    $thisMonth = date('Y-m');
-    $thisYear  = date('Y');
-
-    if (file_exists($counterFile)) {
-        $parts     = explode('|', file_get_contents($counterFile));
-        $lastDate  = $parts[0] ?? $today;
-        $daily     = intval($parts[1] ?? 0);
-        $lastMonth = $parts[2] ?? $thisMonth;
-        $monthly   = intval($parts[3] ?? 0);
-        $lastYear  = $parts[4] ?? $thisYear;
-        $annual    = intval($parts[5] ?? 0);
-
-        $daily   = ($lastDate  !== $today)     ? 1 : $daily   + 1;
-        $monthly = ($lastMonth !== $thisMonth) ? 1 : $monthly + 1;
-        $annual  = ($lastYear  !== $thisYear)  ? 1 : $annual  + 1;
-    } else {
-        $daily = $monthly = $annual = 1;
-    }
-
-    file_put_contents($counterFile,
-        $today . '|' . $daily . '|' . $thisMonth . '|' . $monthly . '|' . $thisYear . '|' . $annual
-    );
-
-    return [
-        'counter'        => str_pad($daily,   4, '0', STR_PAD_LEFT),
-        'monthlyCounter' => str_pad($monthly, 5, '0', STR_PAD_LEFT),
-        'annualCounter'  => str_pad($annual,  6, '0', STR_PAD_LEFT),
-    ];
-}
-
 // Fonction pour obtenir le code et nom du fournisseur, les positions et les réglages du lot
 function getSupplierInfo() {
     $configFile = 'config.json';
@@ -105,7 +70,7 @@ function buildEzpl($code, $supplierCode, $positions) {
     $ezpl .= "XRB" . $positions['datamatrix']['x'] . "," . $positions['datamatrix']['y'] . ",4,0,15\r\n";
     $ezpl .= $code . "\r\n";
 
-     // Code fournisseur
+     // caracter pour séparer le numéro du datamatrix et le code fournisseur
     $ezpl .= "AA," . $positions['supplierCode']['x'] . "," . $positions['supplierCode']['y'] . ",0,0,0,0," . "-" . "\r\n";
 
     // Code fournisseur
@@ -170,15 +135,13 @@ $delayMs      = $supplierInfo['delayMs'];
 
 $printed = [];
 $failed  = [];
-$counters = null;
 
 for ($i = $start; $i <= $end; $i++) {
     $code = str_pad((string)$i, $width, '0', STR_PAD_LEFT);
     $ezpl = buildEzpl($code, $supplierCode, $positions);
-    // dumpLastEzpl($ezpl);
+    dumpLastEzpl($ezpl);
 
     if (@file_put_contents($printerPath, $ezpl)) {
-        $counters = getCounters();
         $printed[] = $code;
     } else {
         $lastError = error_get_last();
@@ -197,10 +160,7 @@ if (empty($failed)) {
         'supplier' => $supplierName,
         'supplierCode' => $supplierCode,
         'printedCount' => count($printed),
-        'printedCodes' => $printed,
-        'counter' => $counters['counter'],
-        'monthlyCounter' => $counters['monthlyCounter'],
-        'annualCounter' => $counters['annualCounter']
+        'printedCodes' => $printed
     ]);
 } else {
     http_response_code(500);
@@ -210,10 +170,7 @@ if (empty($failed)) {
         'printedCount' => count($printed),
         'printedCodes' => $printed,
         'failed' => $failed,
-        'printerPath' => $printerPath,
-        'counter' => $counters['counter'] ?? null,
-        'monthlyCounter' => $counters['monthlyCounter'] ?? null,
-        'annualCounter' => $counters['annualCounter'] ?? null
+        'printerPath' => $printerPath
     ]);
 }
 ?>
