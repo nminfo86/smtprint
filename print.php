@@ -49,6 +49,7 @@ function getSupplierInfo() {
             $supplierName = $config['supplier'][$supplierCode];
             $positions = isset($config['positions']) ? $config['positions'] : [
                 'datamatrix' => ['x' => 5, 'y' => 10],
+                'number' => ['x' => 30, 'y' => 10],
                 'supplierCode' => ['x' => 10, 'y' => 50],
                 'date' => ['x' => 5, 'y' => 70]
             ];
@@ -66,6 +67,7 @@ function getSupplierInfo() {
         'name' => 'Unknown',
         'positions' => [
             'datamatrix' => ['x' => 5, 'y' => 10],
+            'number' => ['x' => 30, 'y' => 10],
             'supplierCode' => ['x' => 10, 'y' => 50],
             'date' => ['x' => 5, 'y' => 70]
         ],
@@ -113,6 +115,9 @@ if (isset($_POST['code_pcba']) && trim($_POST['code_pcba']) !== '') {
     $ezpl .= "Dy2-me-dd\r\n";         // Format de la date interne : AA-MM-JJ (ex : 26-06-24)
     $ezpl .= "Th:m:s\r\n";            // Format de l'heure interne : HH:MM:SS
     
+    // Ajouter le numéro du datamatrix en clair
+    $ezpl .= "AA," . $positions['number']['x'] . "," . $positions['number']['y'] . ",0,0,0,0," . $codeScanne . "\r\n";
+    
     // Position et configuration du DataMatrix
     $ezpl .= "XRB" . $positions['datamatrix']['x'] . "," . $positions['datamatrix']['y'] . ",4,0,15\r\n";  
     $ezpl .= $codeScanne . "\r\n"; 
@@ -124,6 +129,9 @@ if (isset($_POST['code_pcba']) && trim($_POST['code_pcba']) !== '') {
     $ezpl .= "AA," . $positions['date']['x'] . "," . $positions['date']['y'] . ",0,0,0,0," . date('d/m/y') . "\r\n";
     
     $ezpl .= "E\r\n";
+
+    // Débogage : conserver le dernier flux EZPL envoyé pour vérifier visuellement son contenu
+    @file_put_contents('last_label.ezpl.txt', $ezpl);
 
     // Chemin réseau
     $printerPath = "\\\\localhost\\" . $printerName; 
