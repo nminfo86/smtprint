@@ -175,7 +175,7 @@ $counters = null;
 for ($i = $start; $i <= $end; $i++) {
     $code = str_pad((string)$i, $width, '0', STR_PAD_LEFT);
     $ezpl = buildEzpl($code, $supplierCode, $positions);
-    dumpLastEzpl($ezpl);
+    // dumpLastEzpl($ezpl);
 
     if (@file_put_contents($printerPath, $ezpl)) {
         $counters = getCounters();
