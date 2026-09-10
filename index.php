@@ -2,33 +2,49 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Scan PCBA | SAIEG</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=<?php echo @filemtime('style.css'); ?>">
 </head>
 <body>
-    <div class="header">
-        <img src="image/logo.png" alt="Logo" class="logo">
-        <h1>Impression carte PCBA HEXING</h1>
-    </div>
-    <h2>Scanner le code du PCBA</h2>
-    <!-- L'attribut autofocus est crucial pour la douchette -->
-    <input type="text" id="scanInput" autofocus placeholder="En attente du scan...">
-    <div class="counters-grid">
-        <div class="counter">
-            <div>Compteur journalier</div>
-            <div class="counter-value" id="counterDisplay">0000</div>
+    <header class="navbar">
+        <div class="navbar-brand">
+            <img src="image/logo.png" alt="Logo" class="logo">
+            <span class="brand-title">Impression carte PCBA HEXING</span>
         </div>
-        <div class="counter">
-            <div>Compteur mensuel</div>
-            <div class="counter-value" id="monthlyDisplay">00000</div>
+        <nav class="navbar-menu">
+            <a href="index.php" class="nav-link active">🖨️ Scan PCBA</a>
+            <a href="batch.php" class="nav-link">📦 Impression automatique</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <div class="card">
+            <h2>Scanner le code du PCBA</h2>
+            <!-- L'attribut autofocus est crucial pour la douchette -->
+            <input type="text" id="scanInput" autofocus placeholder="En attente du scan...">
         </div>
-        <div class="counter">
-            <div>Compteur annuel</div>
-            <div class="counter-value" id="annualDisplay">000000</div>
+
+        <div class="counters-grid">
+            <div class="counter">
+                <div>Compteur journalier</div>
+                <div class="counter-value" id="counterDisplay">0000</div>
+            </div>
+            <div class="counter">
+                <div>Compteur mensuel</div>
+                <div class="counter-value" id="monthlyDisplay">00000</div>
+            </div>
+            <div class="counter">
+                <div>Compteur annuel</div>
+                <div class="counter-value" id="annualDisplay">000000</div>
+            </div>
         </div>
-    </div>
-    <div class="supplier-info" id="supplierDisplay">En attente...</div>
-    <div id="status"></div>
+        <div class="supplier-info" id="supplierDisplay">En attente...</div>
+        <div id="status"></div>
+    </main>
+
 
     <script>
         const input = document.getElementById('scanInput');
