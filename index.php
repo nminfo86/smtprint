@@ -12,7 +12,7 @@
     <header class="navbar">
         <div class="navbar-brand">
             <img src="image/logo.png" alt="Logo" class="logo">
-            <span class="brand-title">Impression carte PCBA HEXING</span>
+            <span class="brand-title">Impression étiquette carte PCBA</span>
         </div>
         <nav class="navbar-menu">
             <a href="index.php" class="nav-link active">🖨️ Scan PCBA</a>

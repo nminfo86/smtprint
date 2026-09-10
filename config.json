@@ -1,16 +1,16 @@
 {
     "supplier": {
-        "CD": "Condor SPA"
+        "CND": "Condor SPA"
     },
     "printerName": "Godex G500",
     "positions": {
         "datamatrix": {
             "x": 20,
-            "y": 12
+            "y": 15
         },
         "number": {
             "x": 20,
-            "y": 80
+            "y": 85
         },
         "supplierCode": {
             "x": 120,

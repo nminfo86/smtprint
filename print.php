@@ -121,6 +121,10 @@ if (isset($_POST['code_pcba']) && trim($_POST['code_pcba']) !== '') {
     // Position et configuration du DataMatrix
     $ezpl .= "XRB" . $positions['datamatrix']['x'] . "," . $positions['datamatrix']['y'] . ",4,0,15\r\n";  
     $ezpl .= $codeScanne . "\r\n"; 
+
+    // caracter pour séparer le numéro du datamatrix et le code fournisseur
+    $ezpl .= "AA," . $positions['supplierCode']['x'] . "," . $positions['supplierCode']['y'] . ",0,0,0,0," . "-" . "\r\n";
+
     
     // Ajouter le code du fournisseur
     $ezpl .= "AA," . $positions['supplierCode']['x'] . "," . $positions['supplierCode']['y'] . ",0,0,0,0," . $supplierCode . "\r\n";
